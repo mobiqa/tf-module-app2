@@ -9,4 +9,4 @@ variable "min_size" {}
 variable "desired_capacity" {}
 variable "instance_type" {}
 variable "bastion_cidr" {}
-variable "monitor_cidr" {}
+#variable "monitor_cidr" {}
