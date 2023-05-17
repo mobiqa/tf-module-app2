@@ -43,19 +43,7 @@ resource "aws_iam_policy" "policy" {
           "ssm:GetParameters",
           "ssm:GetParameter"
         ],
-        "Resource" : [
-          "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.${var.component}*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/nexus*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.docdb*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.elasticache*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.rds*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.rabbitmq*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/grafana*",
-          "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.ssh*"
-
-
-
-        ]
+        "Resource" : "arn:aws:ssm:us-east-1:855509773460:parameter/${var.env}.${var.component}*"
       },
       {
         "Sid" : "VisualEditor1",
@@ -93,14 +81,6 @@ resource "aws_security_group" "main" {
     cidr_blocks = var.bastion_cidr
   }
 
-  ingress {
-    description = "PROMETHEUS"
-    from_port   = 9100
-    to_port     = 9100
-    protocol    = "tcp"
-#    cidr_blocks = var.monitor_cidr
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -119,91 +99,30 @@ resource "aws_launch_template" "main" {
   image_id               = data.aws_ami.centos8.id
   instance_type          = var.instance_type
   vpc_security_group_ids = [aws_security_group.main.id]
-  user_data              = base64encode(templatefile("${path.module}/user-data.sh", { component = var.component, env = var.env }))
-
   iam_instance_profile {
     arn = aws_iam_instance_profile.profile.arn
   }
 }
 
-#resource "aws_autoscaling_group" "asg" {
-#  name                = "${var.env}-${var.component}-asg"
-#  max_size            = var.max_size
-#  min_size            = var.min_size
-#  desired_capacity    = var.desired_capacity
-#  force_delete        = true
-#  vpc_zone_identifier = var.subnet_ids
-##  target_group_arns   = [aws_lb_target_group.target_group.arn]
-#
-#  launch_template {
-#    id      = aws_launch_template.main.id
-#    version = "$Latest"
-#  }
-#
-#  dynamic "tag" {
-#    for_each = local.all_tags
-#    content {
-#      key                 = tag.value.key
-#      value               = tag.value.value
-#      propagate_at_launch = true
-#    }
-#  }
-#}
+resource "aws_autoscaling_group" "asg" {
+  name                = "${var.env}-${var.component}-asg"
+  max_size            = var.max_size
+  min_size            = var.min_size
+  desired_capacity    = var.desired_capacity
+  force_delete        = true
+  vpc_zone_identifier = var.subnet_ids
 
-#resource "aws_route53_record" "app" {
-#  zone_id = "Z00609824R2L4GMJAHPM"
-#  name    = "${var.component}-${var.env}.mobiqa.online"
-#  type    = "CNAME"
-#  ttl     = 30
-#  records = [var.alb]
-#}
-#
-#resource "aws_lb_target_group" "target_group" {
-#  name     = "${var.component}-${var.env}"
-#  port     = var.app_port
-#  protocol = "HTTP"
-#  vpc_id   = var.vpc_id
-#
-#  health_check {
-#    enabled             = true
-#    healthy_threshold   = 2
-#    unhealthy_threshold = 2
-#    interval            = 5
-#    path                = "/health"
-#    protocol            = "HTTP"
-#    timeout             = 2
-#  }
-#
-#}
-#
-#// THis is for backend components
-#resource "aws_lb_listener_rule" "backend_rule" {
-#  count        = var.listener_priority != 0 ? 1 : 0
-#  listener_arn = var.listener
-#  priority     = var.listener_priority
-#
-#  action {
-#    type             = "forward"
-#    target_group_arn = aws_lb_target_group.target_group.arn
-#  }
-#
-#  condition {
-#    host_header {
-#      values = ["${var.component}-${var.env}.devopsb70.online"]
-#    }
-#  }
-#}
-#
-#
-#// This is only for frontend
-#resource "aws_lb_listener" "frontend" {
-#  count             = var.listener_priority == 0 ? 1 : 0
-#  load_balancer_arn = var.alb_arn
-#  port              = "80"
-#  protocol          = "HTTP"
-#
-#  default_action {
-#    type             = "forward"
-#    target_group_arn = aws_lb_target_group.target_group.arn
-#  }
-#}
+  launch_template {
+    id      = aws_launch_template.main.id
+    version = "$Latest"
+  }
+
+  dynamic "tag" {
+    for_each = local.all_tags
+    content {
+      key                 = tag.value.key
+      value               = tag.value.value
+      propagate_at_launch = true
+    }
+  }
+}
