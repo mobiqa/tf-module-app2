@@ -165,7 +165,7 @@ resource "aws_autoscaling_policy" "cpu-tracking-policy" {
   autoscaling_group_name = aws_autoscaling_group.asg.name
 }
 resource "aws_route53_record" "app" {
-  zone_id = "Z06519691L46QVNTMLXX8"
+  zone_id = "Z00885832UK82LPCXOMEO"
   name    = "${var.component}-${var.env}.mobiqa.online"
   type    = "CNAME"
   ttl     = 30
